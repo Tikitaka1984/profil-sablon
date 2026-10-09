@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Történelmi személyiség profilja – interaktív sablon</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f1efeb; --panel:#ffffff; --ink:#1f2328; --muted:#5f6b76; --line:#dcd9d3;
+  --accent:#0a66c2; --accent-ink:#ffffff; --seal:#b3322d; --ok:#2e7d4f;
+  --field:#f6f6f4; --band:#1b1f23; --bar:#d9e2ec;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151a; --panel:#1b232c; --ink:#e7ecf1; --muted:#9aa7b3; --line:#2d3945;
+    --accent:#70b5f9; --accent-ink:#0b1722; --seal:#e5857f; --ok:#6fcf97;
+    --field:#141b22; --band:#0b0f13; --bar:#2a3744;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151a; --panel:#1b232c; --ink:#e7ecf1; --muted:#9aa7b3; --line:#2d3945;
+  --accent:#70b5f9; --accent-ink:#0b1722; --seal:#e5857f; --ok:#6fcf97;
+  --field:#141b22; --band:#0b0f13; --bar:#2a3744;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.45}
+h1,h2,h3,h4{margin:0;line-height:1.25}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--band);color:#e7ecf1}
+.top h1{font-size:1.2rem;font-weight:600}
+.top p{margin:2px 0 0;font-size:.85rem;color:#a8b4bf}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:.9rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--seal)}
+.top .btn{background:transparent;color:#e7ecf1;border-color:#46535f}
+.top .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.top .btn.danger{color:#ffb4ae}
+
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--line)}
+.tabs button{flex:1;padding:12px;border:0;background:transparent;cursor:pointer;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+
+main{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding:16px;max-width:1440px;margin:0 auto}
+body[data-view="edit"] #pane-preview{display:none}
+body[data-view="preview"] #pane-edit{display:none}
+@media (min-width:1000px){
+  .tabs{display:none}
+  main{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
+  body[data-view] #pane-edit,body[data-view] #pane-preview{display:block}
+  #pane-preview{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+}
+
+/* Szerkesztő */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.card h2{font-size:1.1rem;margin-bottom:4px}
+.hint{color:var(--muted);font-size:.88rem;margin:0 0 12px}
+label{display:block;font-size:.86rem;font-weight:600;margin:10px 0 4px}
+input[type=text],textarea,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--field)}
+textarea{min-height:76px;resize:vertical}
+.row{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:560px){.row.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.item{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg)}
+.item .head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item .head strong{font-size:.88rem;color:var(--muted)}
+.small{padding:3px 10px;font-size:.8rem}
+.counter{font-size:.82rem;color:var(--muted);text-align:right;margin-top:2px}
+.counter.bad{color:var(--seal)}
+.invalid{border-color:var(--seal)!important}
+.addrow{display:flex;gap:8px;flex-wrap:wrap}
+.addrow input{flex:1 1 160px;min-width:0}
+.addrow select{flex:0 0 130px;width:130px}
+.tagbox{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{background:var(--field);border:1px solid var(--line);border-radius:999px;padding:3px 12px;font-size:.88rem;display:inline-flex;align-items:center;gap:6px}
+.tag button{border:0;background:transparent;cursor:pointer;padding:0 2px;color:var(--muted);font-size:1rem;line-height:1}
+.skillrow{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.skillrow span{flex:1;min-width:0;overflow-wrap:anywhere}
+.skillrow select{width:110px;flex:0 0 110px}
+.imgrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.imgrow input[type=file]{font-size:.85rem;max-width:100%}
+.progress{height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin:8px 0 12px}
+.progress span{display:block;height:100%;background:var(--ok);width:0;transition:width .25s}
+.checks{list-style:none;margin:0;padding:0}
+.checks li{display:flex;gap:10px;align-items:flex-start;padding:5px 0;font-size:.92rem}
+.checks .mark{flex:0 0 22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700;border:2px solid var(--line);color:var(--muted)}
+.checks li.ok .mark{background:var(--ok);border-color:var(--ok);color:#fff}
+.checks li.ok span:last-child{color:var(--muted)}
+.msg{font-size:.84rem;color:var(--seal);margin:6px 0 0}
+
+/* Profil előnézet */
+.profile{container-type:inline-size;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.nav{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{width:30px;height:30px;border-radius:6px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:.85rem;flex:0 0 30px}
+.search{flex:1;max-width:260px;background:var(--field);border-radius:6px;padding:5px 10px;font-size:.82rem;color:var(--muted)}
+.navitems{display:none;gap:16px;margin-left:auto;font-size:.72rem;color:var(--muted)}
+.cover{height:140px;background:linear-gradient(120deg,#1f3a52,#3d6a8a 55%,#8aa9bf);background-size:cover;background-position:center;position:relative}
+.cover .motto{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 24px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.cover .motto q{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:1.25rem;quotes:"„" "”"}
+.cover .motto small{margin-top:4px;font-size:.78rem}
+.layout{padding:0 12px 12px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.pcard h3{font-size:1.02rem;margin-bottom:8px}
+.headcard{position:relative;margin-top:-1px;padding-top:62px}
+.avatar{position:absolute;top:-58px;left:16px;width:112px;height:112px;border-radius:50%;border:4px solid var(--panel);background:var(--field) center/cover no-repeat;
+  display:grid;place-items:center;font-size:2.4rem;font-weight:600;color:var(--accent)}
+.avatar{cursor:pointer}
+.avcue{position:absolute;bottom:-2px;right:-6px;background:var(--accent);color:var(--accent-ink);font-size:.72rem;font-weight:600;border-radius:999px;padding:2px 9px;border:2px solid var(--panel)}
+.headcard h2{font-size:1.5rem;overflow-wrap:anywhere}
+.headcard .hl{margin:4px 0;font-size:.98rem}
+.headcard .meta{color:var(--muted);font-size:.88rem}
+.orgs{margin-top:10px;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;font-weight:600}
+.org{display:flex;align-items:center;gap:8px}
+.org i{font-style:normal;width:26px;height:26px;border-radius:5px;background:var(--bar) center/contain no-repeat;color:var(--accent);display:grid;place-items:center;font-size:.8rem;flex:0 0 26px}
+.org i[style]{width:40px;height:40px;flex:0 0 40px;background-color:#fff}
+.fakebtns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.fakebtns span{border-radius:999px;padding:5px 16px;font-size:.88rem;font-weight:600;border:1px solid var(--accent);color:var(--accent)}
+.fakebtns span:first-child{background:var(--accent);color:var(--accent-ink)}
+.pcard p{margin:0 0 6px;overflow-wrap:anywhere}
+.entry{margin-bottom:14px;display:flex;gap:12px;break-inside:avoid}
+.entry:last-child{margin-bottom:0}
+.logo{flex:0 0 40px;height:40px;border-radius:6px;background:var(--bar) center/contain no-repeat;color:var(--accent);display:grid;place-items:center;font-weight:700}
+.logo[style]{flex:0 0 60px;width:60px;height:60px;background-color:#fff;border:1px solid var(--line)}
+.feat{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;margin-bottom:8px}
+.thumb{width:44px;height:44px;border-radius:6px;border:1px solid var(--line);background:#fff center/contain no-repeat;flex:0 0 44px}
+.entry b{display:block}
+.entry .sub,.entry .per{color:var(--muted);font-size:.86rem;display:block}
+.entry ul{margin:4px 0 0;padding-left:18px;font-size:.92rem}
+.entry p{font-size:.92rem;margin-top:3px}
+.goal{font-size:.86rem;color:var(--muted);margin-top:2px}
+.bars .sk{display:flex;align-items:center;gap:8px;font-size:.86rem;padding:3px 0}
+.bars .sk span:first-child{flex:1 1 55%;min-width:0;overflow-wrap:anywhere}
+.bars .track{flex:1 1 45%;height:7px;background:var(--bar);border-radius:4px;overflow:hidden}
+.bars .track i{display:block;height:100%;background:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:2px 11px;font-size:.84rem}
+.rec{border-left:4px solid var(--line);padding:2px 0 2px 12px;margin-bottom:12px;break-inside:avoid}
+.rec.pos{border-left-color:var(--ok)}
+.rec.neg{border-left-color:var(--seal)}
+.rec .src{font-size:.82rem;color:var(--muted)}
+.rec .src.missing{color:var(--seal);font-weight:600}
+.badge{font-size:.72rem;border:1px solid currentColor;border-radius:4px;padding:0 6px;margin-left:6px;white-space:nowrap}
+.empty{color:var(--muted);font-style:italic;font-size:.9rem}
+.conn{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:.9rem}
+.conn:last-child{border-bottom:0}
+.conn span:last-child{color:var(--muted)}
+.post .who{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:.88rem}
+.post .mini{width:32px;height:32px;border-radius:50%;background:var(--bar) center/cover no-repeat;display:grid;place-items:center;color:var(--accent);font-weight:700;font-size:.85rem}
+.post p{font-size:.88rem}
+.post .cap{font-size:.76rem;color:var(--muted);margin-top:4px}
+.note{font-size:.78rem;color:var(--muted);padding:2px 14px 12px}
+.col{display:grid;gap:12px;align-content:start}
+@container (min-width:600px){
+  .layout{grid-template-columns:minmax(0,1.85fr) minmax(0,1fr)}
+  .navitems{display:flex}
+  .cover{height:170px}
+  .headcard{padding-top:64px}
+}
+
+@page{size:A4;margin:12mm}
+@media print{
+  :root:root:root{--bg:#fff;--panel:#fff;--ink:#1f2328;--muted:#5f6b76;--line:#dcd9d3;--accent:#0a66c2;--seal:#b3322d;--ok:#2e7d4f;--field:#f6f6f4;--band:#1b1f23;--bar:#d9e2ec}
+  .top,.tabs,#pane-edit{display:none!important}
+  body{background:#fff}
+  main{display:block;padding:0;max-width:none}
+  #pane-preview{display:block!important;position:static;max-height:none;overflow:visible}
+  .profile{border:0;border-radius:0}
+  .avcue{display:none}
+  .pcard{break-inside:auto}
+  .pcard.keep{break-inside:avoid}
+  .pcard h3{break-after:avoid}
+  .cover{height:140px}
+}
+@media (prefers-reduced-motion:reduce){.progress span{transition:none}}
+</style>
+</head>
+<body data-view="edit">
+
+<header class="top">
+  <div>
+    <h1>Történelmi személyiség profilja – oktatási sablon</h1>
+    <p>Gyakorló feladat. Nem valós közösségi oldal, a profil nem kerül sehová feltöltésre.</p>
+  </div>
+  <div class="actions">
+    <button class="btn" id="btn-reset" type="button">Üres sablon</button>
+    <button class="btn primary" id="btn-dl" type="button">Nyomtatás / PDF mentés</button>
+  </div>
+  <p id="act-msg" role="status" style="flex-basis:100%;margin:0;font-size:.85rem;color:#ffd9a8" hidden></p>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Nézetek">
+  <button role="tab" id="tab-edit" aria-selected="true" data-view="edit" type="button">Szerkesztés</button>
+  <button role="tab" id="tab-preview" aria-selected="false" data-view="preview" type="button">Profil előnézet</button>
+</nav>
+
+<main>
+  <section id="pane-edit" aria-label="Szerkesztő">
+
+    <div class="card">
+      <h2>Értékelési szempontok</h2>
+      <p class="hint">A lista a formai teljesítést jelzi. A tárgyi pontosságot a tanár ellenőrzi.</p>
+      <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+      <p id="score" class="hint" style="margin-bottom:6px"></p>
+      <ul class="checks" id="checks"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Képek (portré és borítókép)</h2>
+      <p class="hint">Az előnézeten a portrére koppintva is megnyílik a képválasztó. Használjon közkincs vagy szabad felhasználású képet (például Wikimedia Commons), és adja meg a forrást. A kép csak az Ön böngészőjében marad, nem kerül feltöltésre sehova. További képek (logók, címerek, projektképek, kiemelt tartalom) az érintett szakaszoknál tölthetők fel.</p>
+      <label for="f-photo">Portré</label>
+      <div class="imgrow">
+        <input type="file" id="f-photo" accept="image/*">
+        <button class="btn small danger" type="button" data-clearimg="photo">Eltávolítás</button>
+      </div>
+      <label for="f-banner">Borítókép</label>
+      <div class="imgrow">
+        <input type="file" id="f-banner" accept="image/*">
+        <button class="btn small danger" type="button" data-clearimg="banner">Eltávolítás</button>
+      </div>
+      <p id="img-msg" class="msg" hidden></p>
+      <label for="f-imgSrc">Képforrások (minden feltöltött képhez: szerző, oldal, licenc)</label>
+      <textarea id="f-imgSrc" data-f="imgSrc" style="min-height:60px" placeholder="pl. Portré: Wikimedia Commons, szerző, közkincs"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Alapadatok</h2>
+      <label for="f-name">Név</label>
+      <input type="text" id="f-name" data-f="name" placeholder="pl. II. József" autocomplete="off">
+      <label for="f-headline">Fejléc (cím, szerep, jellemző vonás)</label>
+      <input type="text" id="f-headline" data-f="headline" maxlength="140" placeholder="pl. Német-római császár | Felvilágosult uralkodó | Reformer" autocomplete="off">
+      <div class="row two">
+        <div><label for="f-location">Helyszín</label>
+          <input type="text" id="f-location" data-f="location" placeholder="pl. Bécs, Habsburg Monarchia" autocomplete="off"></div>
+        <div><label for="f-period">Korszak / uralkodási idő</label>
+          <input type="text" id="f-period" data-f="period" placeholder="pl. 1780–1790" autocomplete="off"></div>
+      </div>
+      <label for="f-motto">Jelmondat a borítóképen (nem kötelező)</label>
+      <input type="text" id="f-motto" data-f="motto" maxlength="120" placeholder="Csak hitelesen igazolt idézet" autocomplete="off">
+      <label for="f-mottoSrc">Az idézet forrása</label>
+      <input type="text" id="f-mottoSrc" data-f="mottoSrc" placeholder="Szerző, mű, év" autocomplete="off">
+      <p id="motto-msg" class="msg" hidden>Jelmondat esetén a forrás megadása kötelező.</p>
+
+      <label>Szervezetek / birodalmak (logóval vagy címerrel)</label>
+      <div id="list-orgs"></div>
+      <button class="btn" type="button" data-add="orgs">Új szervezet hozzáadása</button>
+    </div>
+
+    <div class="card">
+      <h2>Rólam (összefoglaló)</h2>
+      <p class="hint">Az uralkodó jellemzése 3–4 mondatban.</p>
+      <textarea id="f-summary" data-f="summary" maxlength="600" aria-describedby="sum-count"></textarea>
+      <div class="counter" id="sum-count"></div>
+    </div>
+
+    <div class="card">
+      <h2>Tapasztalat</h2>
+      <p class="hint">Tisztségek, szerepek (legalább 3). A leírásban soronként egy pont jelenik meg felsorolásként.</p>
+      <div id="list-experience"></div>
+      <button class="btn" type="button" data-add="experience">Új tétel hozzáadása</button>
+    </div>
+
+    <div class="card">
+      <h2>Kiemelt projektek</h2>
+      <p class="hint">Fontos intézkedések, reformok, események (legalább 2), évszámmal.</p>
+      <div id="list-projects"></div>
+      <button class="btn" type="button" data-add="projects">Új projekt hozzáadása</button>
+    </div>
+
+    <div class="card">
+      <h2>Készségek</h2>
+      <p class="hint">Legalább 4. A szint (1–5) a tanuló szakmai értékelése, indokolja a tanórán.</p>
+      <div class="addrow">
+        <input type="text" id="f-skill" placeholder="Új készség" aria-label="Új készség">
+        <select id="f-skilllvl" aria-label="Szint">
+          <option value="5">5 – kiemelkedő</option><option value="4" selected>4 – erős</option>
+          <option value="3">3 – közepes</option><option value="2">2 – gyenge</option><option value="1">1 – kevéssé jellemző</option>
+        </select>
+        <button class="btn small" type="button" id="btn-skill">Hozzáadás</button>
+      </div>
+      <div id="skill-list" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Tanulmányok</h2>
+      <p class="hint">Nevelők, iskolák, mentorok.</p>
+      <div id="list-education"></div>
+      <button class="btn" type="button" data-add="education">Új tétel hozzáadása</button>
+    </div>
+
+    <div class="card">
+      <h2>Érdeklődési kör</h2>
+      <div class="addrow">
+        <input type="text" id="t-interests" placeholder="pl. Oktatás" aria-label="Új érdeklődési terület">
+        <button class="btn small" type="button" data-addtag="interests">Hozzáadás</button>
+      </div>
+      <div class="tagbox" id="tags-interests"></div>
+    </div>
+
+    <div class="card">
+      <h2>Kiemelt tartalom</h2>
+      <label for="f-ft">Cím</label>
+      <input type="text" id="f-ft" data-f="featured.title" autocomplete="off" placeholder="pl. Türelmi rendelet (1781)">
+      <label for="f-fx">Rövid leírás</label>
+      <textarea id="f-fx" data-f="featured.text" style="min-height:60px"></textarea>
+      <label for="f-fimg">Kép (nem kötelező)</label>
+      <div class="imgrow"><span class="thumb" id="fthumb" hidden></span>
+        <input type="file" id="f-fimg" accept="image/*">
+        <button class="btn small danger" type="button" data-clearf="1">Eltávolítás</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Legutóbbi bejegyzés</h2>
+      <p class="hint">Saját szavakkal írt összefoglaló az uralkodó álláspontjáról. Nem eredeti idézet, ezért a profilon is így van jelölve.</p>
+      <label for="f-py">Évszám</label>
+      <input type="text" id="f-py" data-f="lastPost.year" autocomplete="off" placeholder="pl. 1789">
+      <label for="f-px">Szöveg</label>
+      <textarea id="f-px" data-f="lastPost.text" style="min-height:70px"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Ajánlások</h2>
+      <p class="hint">Korabeli vagy későbbi vélemény saját szavakkal összefoglalva. A forrás kötelező, szerepeljen pozitív és kritikus vélemény is.</p>
+      <div id="list-recs"></div>
+      <button class="btn" type="button" data-add="recs">Új ajánlás hozzáadása</button>
+    </div>
+
+    <div class="card">
+      <h2>Kapcsolatok</h2>
+      <p class="hint">Szövetségesek, ellenfelek, tanácsadók, családtagok (legalább 3).</p>
+      <div id="list-conns"></div>
+      <button class="btn" type="button" data-add="conns">Új kapcsolat hozzáadása</button>
+    </div>
+  </section>
+
+  <section id="pane-preview" aria-label="Profil előnézet">
+    <div class="profile" id="profile"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  var KEY="tort-profil-v2";
+  var RELS=["Szövetséges","Ellenfél","Családtag","Tanácsadó","Hadvezér","Egyéb"];
+  var TYPES=[["pos","Pozitív"],["neg","Kritikus"],["neu","Semleges"]];
+
+  var LISTS={
+    orgs:{label:"Szervezet",img:true,blank:function(){return {name:"",img:""};},
+      fields:[["name","Név","text"]]},
+    experience:{label:"Tétel",min:0,img:true,blank:function(){return {title:"",org:"",period:"",text:"",img:""};},
+      fields:[["title","Megnevezés","text",1],["org","Szervezet","text",1],["period","Időszak","text",1],["text","Leírás (soronként egy pont)","area"]]},
+    projects:{label:"Projekt",img:true,blank:function(){return {title:"",year:"",text:"",goal:"",img:""};},
+      fields:[["title","Megnevezés","text",1],["year","Évszám","text",1],["text","Leírás","area"],["goal","Cél (egy mondat)","text"]]},
+    education:{label:"Tétel",img:true,blank:function(){return {title:"",text:"",img:""};},
+      fields:[["title","Megnevezés","text"],["text","Leírás","area"]]},
+    recs:{label:"Ajánlás",blank:function(){return {text:"",source:"",type:"neu"};},
+      fields:[["text","Vélemény (saját szavakkal)","area"],["source","Forrás (kötelező)","text",1],["type","Jelleg","select",1]]},
+    conns:{label:"Kapcsolat",blank:function(){return {name:"",rel:"Egyéb"};},
+      fields:[["name","Név","text",1],["rel","Viszony","select",1]]}
+  };
+
+  function empty(){
+    return {name:"",headline:"",location:"",period:"",motto:"",mottoSrc:"",imgSrc:"",photo:"",banner:"",
+      orgs:[],summary:"",
+      experience:[LISTS.experience.blank(),LISTS.experience.blank(),LISTS.experience.blank()],
+      projects:[LISTS.projects.blank(),LISTS.projects.blank()],
+      skills:[],education:[LISTS.education.blank()],interests:[],
+      featured:{title:"",text:"",img:""},lastPost:{year:"",text:""},
+      recs:[{text:"",source:"",type:"pos"},{text:"",source:"",type:"neg"}],
+      conns:[{name:"",rel:"Szövetséges"},{name:"",rel:"Ellenfél"},{name:"",rel:"Családtag"}]};
+  }
+
+  function normalize(o){
+    o.orgs=(o.orgs||[]).map(function(x){return typeof x==="string"?{name:x,img:""}:x;});
+    ["experience","projects","education"].forEach(function(k){(o[k]||[]).forEach(function(x){if(x.img==null)x.img="";});});
+    o.featured=o.featured||{title:"",text:"",img:""};
+    if(o.featured.img==null)o.featured.img="";
+    return o;
+  }
+  var S=load();
+  function load(){
+    try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.experience&&o.featured)return normalize(o);}}catch(e){}
+    return empty();
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){showImgMsg("A böngésző nem tudta elmenteni a munkát (valószínűleg a képek mérete miatt). Nyomtassa ki vagy mentse PDF-ként.");}}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+  function $(id){return document.getElementById(id);}
+  function getP(path){return path.split(".").reduce(function(o,k){return o?o[k]:"";},S)||"";}
+  function setP(path,v){var a=path.split(".");var o=S;for(var i=0;i<a.length-1;i++)o=o[a[i]];o[a[a.length-1]]=v;}
+  function opts(list,sel,pair){
+    return list.map(function(o){var v=pair?o[0]:o,l=pair?o[1]:o;return '<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(l)+'</option>';}).join("");
+  }
+
+  /* ---- Szerkesztő ---- */
+  function fieldHtml(L,i,f,val){
+    var d=' data-l="'+L+'" data-i="'+i+'" data-k="'+f[0]+'"';
+    var inner;
+    if(f[2]==="area")inner='<textarea'+d+'>'+esc(val)+'</textarea>';
+    else if(f[2]==="select")inner='<select'+d+'>'+opts(f[0]==="type"?TYPES:RELS,val,f[0]==="type")+'</select>';
+    else{
+      var bad=(L==="recs"&&f[0]==="source"&&S.recs[i].text.trim()&&!String(val).trim());
+      inner='<input type="text"'+d+(bad?' class="invalid"':'')+' value="'+esc(val)+'" autocomplete="off">';
+    }
+    return '<div><label>'+esc(f[1])+'</label>'+inner+'</div>';
+  }
+  function imgCtl(L,i,img){
+    return '<label>Kép (nem kötelező)</label><div class="imgrow">'+(img?'<span class="thumb" style="background-image:url(\''+img+'\')"></span>':'')+
+      '<input type="file" accept="image/*" data-imgl="'+L+'" data-i="'+i+'" aria-label="Kép feltöltése">'+
+      (img?'<button class="btn small danger" type="button" data-clearl="'+L+'" data-i="'+i+'">Eltávolítás</button>':'')+'</div>';
+  }
+  function listHtml(L){
+    var cfg=LISTS[L];
+    return S[L].map(function(x,i){
+      var h='<div class="item"><div class="head"><strong>'+cfg.label+' '+(i+1)+'</strong><button class="btn small danger" type="button" data-del="'+L+'" data-i="'+i+'" aria-label="'+cfg.label+' '+(i+1)+' törlése">Törlés</button></div>';
+      var buf=[];
+      function flush(){
+        if(buf.length){h+='<div class="row'+(buf.length>1?' two':'')+'">'+buf.join("")+'</div>';buf=[];}
+      }
+      cfg.fields.forEach(function(f){
+        var html=fieldHtml(L,i,f,x[f[0]]);
+        if(f[3]){buf.push(html);if(buf.length===2)flush();}
+        else{flush();h+=html;}
+      });
+      flush();
+      if(cfg.img)h+=imgCtl(L,i,x.img);
+      return h+'</div>';
+    }).join("");
+  }
+  function renderEditor(){
+    document.querySelectorAll("[data-f]").forEach(function(el){el.value=getP(el.getAttribute("data-f"));});
+    Object.keys(LISTS).forEach(function(L){$("list-"+L).innerHTML=listHtml(L);});
+    renderTags("interests");updateFeatThumb();renderSkills();updateCounter();updateMottoMsg();
+  }
+  function renderTags(k){
+    $("tags-"+k).innerHTML=S[k].length?S[k].map(function(s,i){
+      return '<span class="tag">'+esc(s)+'<button type="button" data-deltag="'+k+'" data-i="'+i+'" aria-label="'+esc(s)+' törlése">×</button></span>';
+    }).join(""):'<span class="empty">Még nincs hozzáadva.</span>';
+  }
+  function renderSkills(){
+    $("skill-list").innerHTML=S.skills.length?S.skills.map(function(s,i){
+      return '<div class="skillrow"><span>'+esc(s.name)+'</span><select data-sk="'+i+'" aria-label="'+esc(s.name)+' szintje">'+
+        [5,4,3,2,1].map(function(n){return '<option value="'+n+'"'+(n===s.level?' selected':'')+'>'+n+' / 5</option>';}).join("")+
+        '</select><button class="btn small danger" type="button" data-delskill="'+i+'" aria-label="'+esc(s.name)+' törlése">Törlés</button></div>';
+    }).join(""):'<span class="empty">Még nincs készség.</span>';
+  }
+  function sentences(t){
+    var p=t.replace(/\b[IVXLC]{1,5}\./g,function(m){return m.slice(0,-1)+"\u0001";});
+    return p.split(/[.!?…]+(?:\s+(?=[0-9A-ZÁÉÍÓÖŐÚÜŰ„"“(])|\s*$)/).filter(function(x){return x.trim().length>2;}).length;
+  }
+  function updateCounter(){
+    var n=sentences(S.summary),c=$("sum-count"),ok=n>=3&&n<=4;
+    c.textContent=n+" mondat (cél: 3–4) · "+S.summary.length+"/600 karakter";
+    c.className="counter"+(S.summary.trim()&&!ok?" bad":"");
+  }
+  function updateFeatThumb(){
+    var t=$("fthumb");
+    if(S.featured.img){t.hidden=false;t.style.backgroundImage="url('"+S.featured.img+"')";}else{t.hidden=true;t.style.backgroundImage="";}
+  }
+  function updateMottoMsg(){$("motto-msg").hidden=!(S.motto.trim()&&!S.mottoSrc.trim());}
+  function showImgMsg(t){var m=$("img-msg");m.textContent=t;m.hidden=!t;}
+
+  /* ---- Ellenőrzőlista ---- */
+  function renderChecks(){
+    var exp=S.experience.filter(function(x){return x.title.trim()&&x.text.trim();}).length;
+    var prj=S.projects.filter(function(x){return x.title.trim()&&x.year.trim()&&x.text.trim();}).length;
+    var recs=S.recs.filter(function(x){return x.text.trim();});
+    var conns=S.conns.filter(function(x){return x.name.trim();}).length;
+    var n=sentences(S.summary);
+    var hasImg=!!(S.photo||S.banner||S.featured.img||["orgs","experience","projects","education"].some(function(k){return S[k].some(function(x){return x.img;});}));
+    var list=[
+      ["Név és fejléc kitöltve",S.name.trim().length>1&&S.headline.trim().length>=10],
+      ["Összefoglaló 3–4 mondat",n>=3&&n<=4],
+      ["Legalább 3 kitöltött tapasztalat",exp>=3],
+      ["Legalább 2 projekt évszámmal",prj>=2],
+      ["Legalább 4 készség",S.skills.length>=4],
+      ["Legalább 2 ajánlás, mindegyikhez forrással",recs.length>=2&&recs.every(function(x){return x.source.trim();})],
+      ["Pozitív és kritikus vélemény is szerepel",recs.some(function(x){return x.type==="pos";})&&recs.some(function(x){return x.type==="neg";})],
+      ["Legalább 3 kapcsolat",conns>=3],
+      ["Képforrás és idézetforrás megadva (ha van kép vagy jelmondat)",(!hasImg||S.imgSrc.trim())&&(!S.motto.trim()||S.mottoSrc.trim())]
+    ];
+    var done=list.filter(function(x){return x[1];}).length;
+    $("checks").innerHTML=list.map(function(x){
+      return '<li class="'+(x[1]?'ok':'')+'"><span class="mark" aria-hidden="true">'+(x[1]?'✓':'')+'</span><span>'+esc(x[0])+(x[1]?' (teljesítve)':'')+'</span></li>';
+    }).join("");
+    $("bar").style.width=(done/list.length*100)+"%";
+    $("score").textContent="Teljesítve: "+done+" / "+list.length;
+  }
+
+  /* ---- Előnézet ---- */
+  function initial(n){
+    var p=n.replace(/\(.*?\)/g,"").trim().split(/\s+/).filter(function(w){return w&&!/^[IVXLC]+\.?$/.test(w);});
+    return p.length?p[0].charAt(0).toUpperCase():"?";
+  }
+  function lines(t){return t.split(/\n+/).map(function(x){return x.replace(/^\s*[-•*]\s*/,"").trim();}).filter(Boolean);}
+  function textBlock(t){
+    var a=lines(t);
+    if(a.length>1)return '<ul>'+a.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul>';
+    return a.length?'<p>'+esc(a[0])+'</p>':'';
+  }
+  function renderPreview(){
+    var coverStyle=S.banner?' style="background-image:url(\''+S.banner+'\')"':'';
+    var mot=S.motto.trim()?'<div class="motto"><q>'+esc(S.motto)+'</q>'+(S.mottoSrc.trim()?'<small>'+esc(S.mottoSrc)+'</small>':'')+'</div>':'';
+    var avStyle=S.photo?' style="background-image:url(\''+S.photo+'\')"':'';
+    var nconn=S.conns.filter(function(x){return x.name.trim();}).length;
+
+    var h='<div class="nav" aria-hidden="true"><div class="brand">Pr</div><div class="search">Keresés</div>'+
+      '<div class="navitems"><span>Kezdőlap</span><span>Hálózat</span><span>Üzenetek</span><span>Értesítések</span></div></div>';
+    h+='<div class="cover"'+coverStyle+'>'+mot+'</div><div class="layout">';
+
+    /* Fő oszlop */
+    h+='<div class="col">';
+    h+='<div class="pcard headcard keep"><div class="avatar" role="button" tabindex="0" data-pick="photo" aria-label="Portré feltöltése vagy cseréje"'+avStyle+'>'+(S.photo?'':esc(initial(S.name)))+'<span class="avcue" aria-hidden="true">+ Kép</span></div>'+
+      '<h2>'+(S.name.trim()?esc(S.name):'<span class="empty">Név</span>')+'</h2>'+
+      '<div class="hl">'+(S.headline.trim()?esc(S.headline):'<span class="empty">Fejléc</span>')+'</div>'+
+      '<div class="meta">'+[S.location,S.period].filter(function(x){return x.trim();}).map(esc).join(" · ")+(nconn?' · '+nconn+' kapcsolat':'')+'</div>';
+    var og=S.orgs.filter(function(o){return o.name.trim();});
+    if(og.length)h+='<div class="orgs">'+og.map(function(o){return '<div class="org">'+(o.img?'<i style="background-image:url(\''+o.img+'\')" aria-hidden="true"></i>':'<i aria-hidden="true">'+esc(o.name.charAt(0).toUpperCase())+'</i>')+'<span>'+esc(o.name)+'</span></div>';}).join("")+'</div>';
+    h+='<div class="fakebtns" aria-hidden="true"><span>Kapcsolódás</span><span>Üzenet</span><span>További</span></div></div>';
+
+    h+='<div class="pcard"><h3>Rólam</h3>'+(S.summary.trim()?'<p>'+esc(S.summary)+'</p>':'<p class="empty">Még nincs összefoglaló.</p>')+'</div>';
+
+    var ex=S.experience.filter(function(x){return x.title.trim()||x.text.trim();});
+    h+='<div class="pcard"><h3>Tapasztalat</h3>'+(ex.length?ex.map(function(x){
+      return '<div class="entry">'+(x.img?'<div class="logo" style="background-image:url(\''+x.img+'\')" aria-hidden="true"></div>':'<div class="logo" aria-hidden="true">'+esc((x.org||x.title||"?").charAt(0).toUpperCase())+'</div>')+'<div><b>'+esc(x.title)+'</b>'+
+        (x.org.trim()?'<span class="sub">'+esc(x.org)+'</span>':'')+(x.period.trim()?'<span class="per">'+esc(x.period)+'</span>':'')+textBlock(x.text)+'</div></div>';
+    }).join(""):'<p class="empty">Még nincs tétel.</p>')+'</div>';
+
+    var pr=S.projects.filter(function(x){return x.title.trim()||x.text.trim();});
+    h+='<div class="pcard"><h3>Kiemelt projektek</h3>'+(pr.length?pr.map(function(x){
+      return '<div class="entry">'+(x.img?'<div class="logo" style="background-image:url(\''+x.img+'\')" aria-hidden="true"></div>':'<div class="logo" aria-hidden="true">'+esc((x.year||"•").toString().slice(-2))+'</div>')+'<div><b>'+esc(x.title)+'</b>'+
+        (x.year.trim()?'<span class="per">'+esc(x.year)+'</span>':'')+textBlock(x.text)+(x.goal.trim()?'<div class="goal">Cél: '+esc(x.goal)+'</div>':'')+'</div></div>';
+    }).join(""):'<p class="empty">Még nincs projekt.</p>')+'</div>';
+
+    var rc=S.recs.filter(function(x){return x.text.trim();});
+    h+='<div class="pcard"><h3>Ajánlások</h3>'+(rc.length?rc.map(function(x){
+      var cls=x.type==="pos"?"pos":(x.type==="neg"?"neg":"");
+      var lab=x.type==="pos"?"Pozitív":(x.type==="neg"?"Kritikus":"Semleges");
+      return '<div class="rec '+cls+'"><p>'+esc(x.text)+'<span class="badge">'+lab+'</span></p>'+
+        (x.source.trim()?'<div class="src">Forrás: '+esc(x.source)+'</div>':'<div class="src missing">Hiányzó forrásmegjelölés</div>')+'</div>';
+    }).join(""):'<p class="empty">Még nincs ajánlás.</p>')+'</div>';
+    h+='</div>';
+
+    /* Oldalsó oszlop */
+    h+='<div class="col">';
+    if(S.featured.title.trim()||S.featured.text.trim()||S.featured.img)
+      h+='<div class="pcard keep"><h3>Kiemelt tartalom</h3>'+(S.featured.img?'<img class="feat" alt="" src="'+S.featured.img+'">':'')+'<b>'+esc(S.featured.title)+'</b><p style="font-size:.9rem;margin-top:3px">'+esc(S.featured.text)+'</p></div>';
+
+    h+='<div class="pcard keep bars"><h3>Készségek</h3>'+(S.skills.length?S.skills.map(function(s){
+      return '<div class="sk"><span>'+esc(s.name)+'</span><span class="track" role="img" aria-label="'+s.level+' / 5"><i style="width:'+(s.level*20)+'%"></i></span></div>';
+    }).join(""):'<p class="empty">Még nincs készség.</p>')+'</div>';
+
+    var ed=S.education.filter(function(x){return x.title.trim()||x.text.trim()||x.img;});
+    h+='<div class="pcard keep"><h3>Tanulmányok</h3>'+(ed.length?ed.map(function(x){
+      return '<div class="entry" style="margin-bottom:10px">'+(x.img?'<div class="logo" style="background-image:url(\''+x.img+'\')" aria-hidden="true"></div>':'')+'<div><b style="font-size:.92rem">'+esc(x.title)+'</b><p style="font-size:.86rem;color:var(--muted)">'+esc(x.text)+'</p></div></div>';
+    }).join(""):'<p class="empty">Még nincs tétel.</p>')+'</div>';
+
+    h+='<div class="pcard keep"><h3>Érdeklődési kör</h3>'+(S.interests.length?'<div class="chips">'+S.interests.map(function(s){return '<span class="chip">'+esc(s)+'</span>';}).join("")+'</div>':'<p class="empty">Még nincs hozzáadva.</p>')+'</div>';
+
+    if(S.lastPost.text.trim())
+      h+='<div class="pcard keep post"><h3>Legutóbbi bejegyzés</h3><div class="who"><div class="mini"'+avStyle+'>'+(S.photo?'':esc(initial(S.name)))+'</div><div><b>'+esc(S.name)+'</b><div style="font-size:.78rem;color:var(--muted)">'+esc(S.lastPost.year)+'</div></div></div><p>'+esc(S.lastPost.text)+'</p><div class="cap">Saját szavakkal írt összefoglaló, nem eredeti idézet.</div></div>';
+
+    var cn=S.conns.filter(function(x){return x.name.trim();});
+    h+='<div class="pcard keep"><h3>Kapcsolatok</h3>'+(cn.length?cn.map(function(x){
+      return '<div class="conn"><span>'+esc(x.name)+'</span><span>'+esc(x.rel)+'</span></div>';
+    }).join(""):'<p class="empty">Még nincs kapcsolat.</p>')+'</div>';
+    h+='</div></div>';
+
+    h+='<div class="note">Oktatási célú, fiktív profilsablon. Nem valós közösségi oldal profilja.'+(S.imgSrc.trim()?' Képforrás: '+esc(S.imgSrc)+'.':'')+'</div>';
+    $("profile").innerHTML=h;
+  }
+
+  function refresh(){renderChecks();renderPreview();save();}
+
+  /* ---- Képek ---- */
+  function cropCover(img,W,H,contain){
+    var c=document.createElement("canvas");c.width=W;c.height=H;
+    var ctx=c.getContext("2d");
+    if(contain){ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);}
+    var s=contain?Math.min(W/img.width,H/img.height):Math.max(W/img.width,H/img.height);
+    var w=img.width*s,h=img.height*s;
+    ctx.drawImage(img,(W-w)/2,(H-h)/2,w,h);
+    return c.toDataURL("image/jpeg",0.8);
+  }
+  function handleFile(input,key,W,H){
+    var f=input.files&&input.files[0];
+    if(!f)return;
+    if(!/^image\//.test(f.type)){showImgMsg("Csak képfájl tölthető fel.");return;}
+    if(f.size>10*1024*1024){showImgMsg("A kép mérete legfeljebb 10 MB lehet.");return;}
+    showImgMsg("");
+    var r=new FileReader();
+    r.onload=function(){
+      var img=new Image();
+      img.onload=function(){S[key]=cropCover(img,W,H);refresh();};
+      img.onerror=function(){showImgMsg("A képet nem sikerült beolvasni.");};
+      img.src=r.result;
+    };
+    r.onerror=function(){showImgMsg("A fájlt nem sikerült beolvasni.");};
+    r.readAsDataURL(f);
+  }
+  function readImage(file,W,H,contain,cb){
+    if(!file)return;
+    if(!/^image\//.test(file.type)){showImgMsg("Csak képfájl tölthető fel.");return;}
+    if(file.size>10*1024*1024){showImgMsg("A kép mérete legfeljebb 10 MB lehet.");return;}
+    showImgMsg("");
+    var r=new FileReader();
+    r.onload=function(){
+      var img=new Image();
+      img.onload=function(){cb(cropCover(img,W,H,contain));};
+      img.onerror=function(){showImgMsg("A képet nem sikerült beolvasni.");};
+      img.src=r.result;
+    };
+    r.onerror=function(){showImgMsg("A fájlt nem sikerült beolvasni.");};
+    r.readAsDataURL(file);
+  }
+  document.addEventListener("change",function(e){
+    var t=e.target;
+    if(t.type!=="file"||!t.hasAttribute("data-imgl"))return;
+    var L=t.getAttribute("data-imgl"),i=+t.getAttribute("data-i");
+    readImage(t.files&&t.files[0],240,240,true,function(url){S[L][i].img=url;renderEditor();refresh();});
+  });
+  $("f-fimg").addEventListener("change",function(){
+    readImage(this.files&&this.files[0],800,450,false,function(url){S.featured.img=url;updateFeatThumb();refresh();});
+  });
+  document.addEventListener("click",function(e){
+    var t=e.target.closest("button");if(!t)return;
+    if(t.hasAttribute("data-clearl")){S[t.getAttribute("data-clearl")][+t.getAttribute("data-i")].img="";renderEditor();refresh();}
+    else if(t.hasAttribute("data-clearf")){S.featured.img="";$("f-fimg").value="";updateFeatThumb();refresh();}
+  });
+  $("f-photo").addEventListener("change",function(){handleFile(this,"photo",320,320);});
+  $("f-banner").addEventListener("change",function(){handleFile(this,"banner",1200,300);});
+
+  /* ---- Események ---- */
+  document.addEventListener("input",function(e){
+    var t=e.target;
+    if(t.hasAttribute("data-f")){
+      setP(t.getAttribute("data-f"),t.value);
+      if(t.getAttribute("data-f")==="summary")updateCounter();
+      if(/^motto/.test(t.getAttribute("data-f")))updateMottoMsg();
+      refresh();
+    }else if(t.hasAttribute("data-l")){
+      var L=t.getAttribute("data-l"),i=+t.getAttribute("data-i"),k=t.getAttribute("data-k");
+      S[L][i][k]=t.value;
+      if(L==="recs"&&k==="source")t.classList.toggle("invalid",!!S.recs[i].text.trim()&&!t.value.trim());
+      refresh();
+    }
+  });
+  document.addEventListener("change",function(e){
+    var t=e.target;
+    if(t.tagName!=="SELECT")return;
+    if(t.hasAttribute("data-l")){S[t.getAttribute("data-l")][+t.getAttribute("data-i")][t.getAttribute("data-k")]=t.value;refresh();}
+    else if(t.hasAttribute("data-sk")){S.skills[+t.getAttribute("data-sk")].level=+t.value;refresh();}
+  });
+  document.addEventListener("click",function(e){
+    var t=e.target.closest("button");if(!t)return;
+    if(t.hasAttribute("data-add")){var L=t.getAttribute("data-add");S[L].push(LISTS[L].blank());renderEditor();refresh();}
+    else if(t.hasAttribute("data-del")){S[t.getAttribute("data-del")].splice(+t.getAttribute("data-i"),1);renderEditor();refresh();}
+    else if(t.hasAttribute("data-addtag")){addTag(t.getAttribute("data-addtag"));}
+    else if(t.hasAttribute("data-deltag")){var k=t.getAttribute("data-deltag");S[k].splice(+t.getAttribute("data-i"),1);renderTags(k);refresh();}
+    else if(t.hasAttribute("data-delskill")){S.skills.splice(+t.getAttribute("data-delskill"),1);renderSkills();refresh();}
+    else if(t.hasAttribute("data-clearimg")){S[t.getAttribute("data-clearimg")]="";var inp=$(t.getAttribute("data-clearimg")==="photo"?"f-photo":"f-banner");inp.value="";showImgMsg("");refresh();}
+    else if(t.hasAttribute("data-view")){setView(t.getAttribute("data-view"));}
+  });
+
+  function pickPhoto(){$("f-photo").click();}
+  $("profile").addEventListener("click",function(e){if(e.target.closest("[data-pick]"))pickPhoto();});
+  $("profile").addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target.hasAttribute&&e.target.hasAttribute("data-pick")){e.preventDefault();pickPhoto();}});
+
+  function addTag(k){
+    var el=$("t-"+k),v=el.value.trim();
+    if(!v)return;
+    if(S[k].indexOf(v)===-1)S[k].push(v);
+    el.value="";renderTags(k);refresh();el.focus();
+  }
+  ["interests"].forEach(function(k){
+    $("t-"+k).addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();addTag(k);}});
+  });
+  function addSkill(){
+    var el=$("f-skill"),v=el.value.trim();
+    if(!v)return;
+    S.skills.push({name:v,level:+$("f-skilllvl").value});
+    el.value="";renderSkills();refresh();el.focus();
+  }
+  $("btn-skill").addEventListener("click",addSkill);
+  $("f-skill").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();addSkill();}});
+
+  function setView(v){
+    document.body.setAttribute("data-view",v);
+    ["edit","preview"].forEach(function(n){$("tab-"+n).setAttribute("aria-selected",String(n===v));});
+    window.scrollTo(0,0);
+  }
+
+  var resetArmed=false,resetTimer=null;
+  $("btn-reset").addEventListener("click",function(){
+    var b=this;
+    if(!resetArmed){
+      resetArmed=true;b.textContent="Biztosan törli? Kattintson újra";b.classList.add("danger");
+      resetTimer=setTimeout(function(){resetArmed=false;b.textContent="Üres sablon";b.classList.remove("danger");},4000);
+    }else{
+      clearTimeout(resetTimer);resetArmed=false;b.textContent="Üres sablon";b.classList.remove("danger");
+      S=empty();$("f-photo").value="";$("f-banner").value="";renderEditor();refresh();
+    }
+  });
+  function actMsg(t){var m=$("act-msg");m.textContent=t;m.hidden=!t;}
+  $("btn-dl").addEventListener("click",function(){
+    actMsg("");
+    try{window.print();actMsg("A felugró ablakban válassza a „Mentés PDF-ként” lehetőséget (cél: PDF), majd mentse el a fájlt.");}
+    catch(e){actMsg("A nyomtatás nem indult el. Használja a Ctrl+P billentyűkombinációt.");}
+  });
+
+  renderEditor();refresh();
+})();
+</script>
+</body>
+</html>
