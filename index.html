@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Történelmi személyiség profilja – interaktív sablon</title>
+<title>Történelmi személyiség profilja – tanórai sablon 2.0</title>
 <style>
 :root{
   box-sizing:border-box;
@@ -175,10 +175,19 @@ textarea{min-height:76px;resize:vertical}
   .profile{border:0;border-radius:0}
   .avcue{display:none}
   .pcard{break-inside:auto}
-  .pcard.keep{break-inside:avoid}
+  .pcard.keep{break-inside:auto}
+  .headcard,.pcard.post{break-inside:avoid}
+  .print-ident{display:block!important;font-size:11pt;font-weight:700;padding:0 0 8px;border-bottom:1px solid #888;margin-bottom:8px}
+  input,button{box-shadow:none!important}
   .pcard h3{break-after:avoid}
   .cover{height:140px}
 }
+.print-ident{display:none}
+input[type=file]{max-width:100%;min-width:0}
+.entry>div:last-child,.col,.org span{min-width:0;overflow-wrap:anywhere}
+.hl,.meta,.conn,.note,.tag,.rec,.motto{overflow-wrap:anywhere}
+@media (pointer:coarse){.btn,.tag button{min-height:44px;min-width:44px}}
+@media print{.profile{container-type:normal;overflow:visible}.layout{display:block}.col{display:block}.pcard{margin-bottom:12px}.entry,.pcard.post{break-inside:auto}}
 @media (prefers-reduced-motion:reduce){.progress span{transition:none}}
 </style>
 </head>
@@ -201,12 +210,12 @@ textarea{min-height:76px;resize:vertical}
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Nézetek">
-  <button role="tab" id="tab-edit" aria-selected="true" data-view="edit" type="button">Szerkesztés</button>
-  <button role="tab" id="tab-preview" aria-selected="false" data-view="preview" type="button">Profil előnézet</button>
+  <button role="tab" id="tab-edit" aria-selected="true" aria-controls="pane-edit" tabindex="0" data-view="edit" type="button">Szerkesztés</button>
+  <button role="tab" id="tab-preview" aria-selected="false" aria-controls="pane-preview" tabindex="-1" data-view="preview" type="button">Profil előnézet</button>
 </nav>
 
 <main>
-  <section id="pane-edit" aria-label="Szerkesztő">
+  <section id="pane-edit" role="tabpanel" aria-labelledby="tab-edit">
 
     <div class="card">
       <h2>Tanulói adatok és mentés</h2>
@@ -215,13 +224,13 @@ textarea{min-height:76px;resize:vertical}
         <div><label for="f-student">Tanuló neve</label><input type="text" id="f-student" data-f="student" maxlength="100" autocomplete="name" placeholder="Teljes név"></div>
         <div><label for="f-class">Osztály / csoport</label><input type="text" id="f-class" data-f="studentClass" maxlength="60" placeholder="pl. 10. A"></div>
       </div>
-      <p class="hint" style="margin-top:10px">A munka automatikusan csak ebben a böngészőben tárolódik. A JSON-fájl a biztonsági másolat; másik eszközön ebből tudod folytatni.</p>
+      <p class="hint" style="margin-top:10px">A böngésző ideiglenesen megőrzi a munkát, de iskolai gépen ez bármikor törlődhet. <strong>Óra végén töltsd le a JSON-fájlt, és add le a PDF-et is.</strong> A JSON később visszatölthető. Mások ugyanazt a gépet használhatják: munka után ments, majd szükség esetén töröld a kitöltést.</p>
     </div>
     <div class="card">
       <h2>Értékelési szempontok</h2>
-      <p class="hint">A lista a formai teljesítést jelzi. A tárgyi pontosságot a tanár ellenőrzi.</p>
+      <p class="hint">A lista a formai teljesítést jelzi, nem a történelmi pontosságot. A történelmi állításokat és forrásokat a tanár ellenőrzi.</p>
       <div class="progress" aria-hidden="true"><span id="bar"></span></div>
-      <p id="score" class="hint" style="margin-bottom:6px"></p>
+      <p id="score" class="hint" style="margin-bottom:6px" role="status" aria-live="polite"></p>
       <ul class="checks" id="checks"></ul>
     </div>
 
@@ -233,32 +242,36 @@ textarea{min-height:76px;resize:vertical}
         <input type="file" id="f-photo" accept="image/*">
         <button class="btn small danger" type="button" data-clearimg="photo">Eltávolítás</button>
       </div>
+      <label for="f-photoSrc">Portré pontos forrása és felhasználási feltétele</label>
+      <input id="f-photoSrc" type="text" data-f="photoSrc" maxlength="1000" placeholder="Szerző, URL / lelőhely, licenc">
       <label for="f-banner">Borítókép</label>
       <div class="imgrow">
         <input type="file" id="f-banner" accept="image/*">
         <button class="btn small danger" type="button" data-clearimg="banner">Eltávolítás</button>
       </div>
+      <label for="f-bannerSrc">Borítókép pontos forrása és felhasználási feltétele</label>
+      <input id="f-bannerSrc" type="text" data-f="bannerSrc" maxlength="1000" placeholder="Szerző, URL / lelőhely, licenc">
       <p id="img-msg" class="msg" hidden></p>
-      <label for="f-imgSrc">Képforrások (minden feltöltött képhez: szerző, oldal, licenc)</label>
-      <textarea id="f-imgSrc" data-f="imgSrc" style="min-height:60px" placeholder="pl. Portré: Wikimedia Commons, szerző, közkincs"></textarea>
+      <label for="f-imgSrc">Régi, összesített képforrásjegyzék (korábbi mentésekhez; ha használod, minden képet külön nevezz meg)</label>
+      <textarea id="f-imgSrc" data-f="imgSrc" maxlength="5000" style="min-height:60px" placeholder="pl. Portré: Wikimedia Commons, szerző, közkincs"></textarea>
     </div>
 
     <div class="card">
       <h2>Alapadatok</h2>
       <label for="f-name">Név</label>
-      <input type="text" id="f-name" data-f="name" placeholder="pl. II. József" autocomplete="off">
+      <input type="text" id="f-name" data-f="name" maxlength="6000" placeholder="pl. II. József" autocomplete="off">
       <label for="f-headline">Fejléc (cím, szerep, jellemző vonás)</label>
       <input type="text" id="f-headline" data-f="headline" maxlength="140" placeholder="pl. Német-római császár | Felvilágosult uralkodó | Reformer" autocomplete="off">
       <div class="row two">
         <div><label for="f-location">Helyszín</label>
-          <input type="text" id="f-location" data-f="location" placeholder="pl. Bécs, Habsburg Monarchia" autocomplete="off"></div>
-        <div><label for="f-period">Korszak / uralkodási idő</label>
-          <input type="text" id="f-period" data-f="period" placeholder="pl. 1780–1790" autocomplete="off"></div>
+          <input type="text" id="f-location" data-f="location" maxlength="6000" placeholder="pl. Bécs, Habsburg Monarchia" autocomplete="off"></div>
+        <div><label for="f-period">Korszak / tevékenységi idő</label>
+          <input type="text" id="f-period" data-f="period" maxlength="6000" placeholder="pl. 1780–1790" autocomplete="off"></div>
       </div>
       <label for="f-motto">Jelmondat a borítóképen (nem kötelező)</label>
       <input type="text" id="f-motto" data-f="motto" maxlength="120" placeholder="Csak hitelesen igazolt idézet" autocomplete="off">
       <label for="f-mottoSrc">Az idézet forrása</label>
-      <input type="text" id="f-mottoSrc" data-f="mottoSrc" placeholder="Szerző, mű, év" autocomplete="off">
+      <input type="text" id="f-mottoSrc" data-f="mottoSrc" maxlength="6000" placeholder="Szerző, mű, év" autocomplete="off">
       <p id="motto-msg" class="msg" hidden>Jelmondat esetén a forrás megadása kötelező.</p>
 
       <label>Szervezetek / birodalmak (logóval vagy címerrel)</label>
@@ -267,9 +280,9 @@ textarea{min-height:76px;resize:vertical}
     </div>
 
     <div class="card">
-      <h2>Rólam (összefoglaló)</h2>
-      <p class="hint">Az uralkodó jellemzése 3–4 mondatban.</p>
-      <textarea id="f-summary" data-f="summary" maxlength="600" aria-describedby="sum-count"></textarea>
+      <h2 id="summary-heading">Rólam (összefoglaló)</h2>
+      <p class="hint">A történelmi személy jellemzése 3–4 mondatban.</p>
+      <textarea id="f-summary" data-f="summary" maxlength="600" aria-labelledby="summary-heading" aria-describedby="sum-count"></textarea>
       <div class="counter" id="sum-count"></div>
     </div>
 
@@ -320,22 +333,24 @@ textarea{min-height:76px;resize:vertical}
     <div class="card">
       <h2>Kiemelt tartalom</h2>
       <label for="f-ft">Cím</label>
-      <input type="text" id="f-ft" data-f="featured.title" autocomplete="off" placeholder="pl. Türelmi rendelet (1781)">
+      <input type="text" id="f-ft" data-f="featured.title" maxlength="1000" autocomplete="off" placeholder="pl. Türelmi rendelet (1781)">
       <label for="f-fx">Rövid leírás</label>
-      <textarea id="f-fx" data-f="featured.text" style="min-height:60px"></textarea>
+      <textarea id="f-fx" data-f="featured.text" maxlength="6000" style="min-height:60px"></textarea>
       <label for="f-fimg">Kép (nem kötelező)</label>
       <div class="imgrow"><span class="thumb" id="fthumb" hidden></span>
         <input type="file" id="f-fimg" accept="image/*">
         <button class="btn small danger" type="button" data-clearf="1">Eltávolítás</button></div>
+      <label for="f-featuredSrc">Kiemelt kép forrása és felhasználási feltétele</label>
+      <input type="text" id="f-featuredSrc" data-f="featured.imgSource" maxlength="1000" placeholder="Szerző, URL / lelőhely, licenc">
     </div>
 
     <div class="card">
       <h2>Legutóbbi bejegyzés</h2>
-      <p class="hint">Saját szavakkal írt összefoglaló az uralkodó álláspontjáról. Nem eredeti idézet, ezért a profilon is így van jelölve.</p>
+      <p class="hint">Saját szavakkal írt összefoglaló a történelmi személy álláspontjáról. Nem eredeti idézet, ezért a profilon is így van jelölve.</p>
       <label for="f-py">Évszám</label>
-      <input type="text" id="f-py" data-f="lastPost.year" autocomplete="off" placeholder="pl. 1789">
+      <input type="text" id="f-py" data-f="lastPost.year" maxlength="100" autocomplete="off" placeholder="pl. 1789">
       <label for="f-px">Szöveg</label>
-      <textarea id="f-px" data-f="lastPost.text" style="min-height:70px"></textarea>
+      <textarea id="f-px" data-f="lastPost.text" maxlength="6000" style="min-height:70px"></textarea>
     </div>
 
     <div class="card">
@@ -353,7 +368,7 @@ textarea{min-height:76px;resize:vertical}
     </div>
   </section>
 
-  <section id="pane-preview" aria-label="Profil előnézet">
+  <section id="pane-preview" role="tabpanel" aria-labelledby="tab-preview">
     <div class="profile" id="profile"></div>
   </section>
 </main>
@@ -361,17 +376,19 @@ textarea{min-height:76px;resize:vertical}
 <script>
 (function(){
   var KEY="tort-profil-v2";
+  var MAX_JSON=50*1024*1024, IDB_NAME="tort-profil-v2-safestore", IDB_KEY="current", LAST_SAVED_KEY=KEY+"-saved-at";
+  var db=null, dbAvailable=false, saveTimer=null, userChanged=false, pendingSave=false, durableSave=true, revision=0;
   var RELS=["Szövetséges","Ellenfél","Családtag","Tanácsadó","Hadvezér","Egyéb"];
   var TYPES=[["pos","Pozitív"],["neg","Kritikus"],["neu","Semleges"]];
 
   var LISTS={
-    orgs:{label:"Szervezet",img:true,blank:function(){return {name:"",img:""};},
+    orgs:{label:"Szervezet",img:true,blank:function(){return {name:"",img:"",imgSource:""};},
       fields:[["name","Név","text"]]},
-    experience:{label:"Tétel",min:0,img:true,blank:function(){return {title:"",org:"",period:"",text:"",img:""};},
+    experience:{label:"Tétel",min:0,img:true,blank:function(){return {title:"",org:"",period:"",text:"",img:"",imgSource:""};},
       fields:[["title","Megnevezés","text",1],["org","Szervezet","text",1],["period","Időszak","text",1],["text","Leírás (soronként egy pont)","area"]]},
-    projects:{label:"Projekt",img:true,blank:function(){return {title:"",year:"",text:"",goal:"",img:""};},
+    projects:{label:"Projekt",img:true,blank:function(){return {title:"",year:"",text:"",goal:"",img:"",imgSource:""};},
       fields:[["title","Megnevezés","text",1],["year","Évszám","text",1],["text","Leírás","area"],["goal","Cél (egy mondat)","text"]]},
-    education:{label:"Tétel",img:true,blank:function(){return {title:"",text:"",img:""};},
+    education:{label:"Tétel",img:true,blank:function(){return {title:"",text:"",img:"",imgSource:""};},
       fields:[["title","Megnevezés","text"],["text","Leírás","area"]]},
     recs:{label:"Ajánlás",blank:function(){return {text:"",source:"",type:"neu"};},
       fields:[["text","Vélemény (saját szavakkal)","area"],["source","Forrás (kötelező)","text",1],["type","Jelleg","select",1]]},
@@ -380,12 +397,12 @@ textarea{min-height:76px;resize:vertical}
   };
 
   function empty(){
-    return {student:"",studentClass:"",name:"",headline:"",location:"",period:"",motto:"",mottoSrc:"",imgSrc:"",photo:"",banner:"",
+    return {student:"",studentClass:"",name:"",headline:"",location:"",period:"",motto:"",mottoSrc:"",imgSrc:"",photoSrc:"",bannerSrc:"",photo:"",banner:"",
       orgs:[],summary:"",
       experience:[LISTS.experience.blank(),LISTS.experience.blank(),LISTS.experience.blank()],
       projects:[LISTS.projects.blank(),LISTS.projects.blank()],
       skills:[],education:[LISTS.education.blank()],interests:[],
-      featured:{title:"",text:"",img:""},lastPost:{year:"",text:""},
+      featured:{title:"",text:"",img:"",imgSource:""},lastPost:{year:"",text:""},
       recs:[{text:"",source:"",type:"pos"},{text:"",source:"",type:"neg"}],
       conns:[{name:"",rel:"Szövetséges"},{name:"",rel:"Ellenfél"},{name:"",rel:"Családtag"}]};
   }
@@ -395,7 +412,7 @@ textarea{min-height:76px;resize:vertical}
   function cleanImage(v){return typeof v==="string"&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)&&v.length<5000000?v:"";}
   function normalize(raw){
     var base=empty(),o=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
-    ["student","studentClass","name","headline","location","period","motto","mottoSrc","imgSrc","summary"].forEach(function(k){base[k]=cleanText(o[k],k==="imgSrc"?5000:6000);});
+    ["student","studentClass","name","headline","location","period","motto","mottoSrc","imgSrc","photoSrc","bannerSrc","summary"].forEach(function(k){base[k]=cleanText(o[k],k==="imgSrc"?5000:6000);});
     base.photo=cleanImage(o.photo);base.banner=cleanImage(o.banner);
     ["orgs","experience","projects","education","recs","conns"].forEach(function(k){
       var old=Array.isArray(o[k])?o[k].slice(0,50):null;
@@ -413,26 +430,77 @@ textarea{min-height:76px;resize:vertical}
         return x;
       });
     });
-    base.skills=Array.isArray(o.skills)?o.skills.slice(0,50).map(function(v){return {name:cleanText(v&&v.name,150),level:Math.max(1,Math.min(5,Number(v&&v.level)||3))};}).filter(function(x){return x.name.trim();}):[];
-    base.interests=Array.isArray(o.interests)?o.interests.slice(0,50).map(function(x){return cleanText(x,150);}).filter(Boolean):[];
-    base.featured={title:cleanText(o.featured&&o.featured.title,1000),text:cleanText(o.featured&&o.featured.text),img:cleanImage(o.featured&&o.featured.img)};
+    base.skills=Array.isArray(o.skills)?o.skills.slice(0,50).map(function(v){return {name:cleanText(v&&v.name,6000),level:Math.max(1,Math.min(5,Number(v&&v.level)||3))};}).filter(function(x){return x.name.trim();}):[];
+    base.interests=Array.isArray(o.interests)?o.interests.slice(0,50).map(function(x){return cleanText(x,6000);}).filter(Boolean):[];
+    base.featured={title:cleanText(o.featured&&o.featured.title,1000),text:cleanText(o.featured&&o.featured.text),img:cleanImage(o.featured&&o.featured.img),imgSource:cleanText(o.featured&&o.featured.imgSource,1000)};
     base.lastPost={year:cleanText(o.lastPost&&o.lastPost.year,100),text:cleanText(o.lastPost&&o.lastPost.text)};
     return base;
   }
+  var localLoadValid=false;
   var S=load();
   function load(){
-    try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&typeof o==="object")return normalize(o);}}catch(e){}
+    try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&typeof o==="object"&&!Array.isArray(o)&&typeof o.name==="string"){localLoadValid=true;return normalize(o);}}}catch(e){}
     return empty();
   }
+  function setSaveState(message,ok){
+    $("save-status").textContent=message;
+    $("save-status").style.color=ok?"#b9f3c9":"#ffb4ae";
+  }
   function save(){
+    clearTimeout(saveTimer);
+    pendingSave=true;
+    var currentRevision=++revision;
+    // Protect the final keystroke even when reloading before the deferred save.
+    try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(LAST_SAVED_KEY,String(Date.now()));durableSave=true;}
+    catch(e){durableSave=false;}
+    setSaveState("Automatikus mentés folyamatban…",true);
+    saveTimer=setTimeout(function(){
+      var snapshot,localOk=false,now=Date.now();
+      try{
+        snapshot=JSON.stringify(S);
+        localStorage.setItem(KEY,snapshot);
+        localStorage.setItem(LAST_SAVED_KEY,String(now));
+        localOk=true;
+      }catch(e){}
+      if(dbAvailable&&db){
+        try{
+          var tx=db.transaction("profiles","readwrite");
+          tx.objectStore("profiles").put({value:snapshot||JSON.stringify(S),savedAt:now},IDB_KEY);
+          tx.oncomplete=function(){if(currentRevision!==revision)return;pendingSave=false;durableSave=true;setSaveState("Automatikus mentés: sikeres ezen a böngészőn. Óra végén készíts JSON-másolatot!",true);};
+          tx.onerror=tx.onabort=function(){if(currentRevision!==revision)return;pendingSave=false;durableSave=localOk;setSaveState(localOk?"Mentve a böngészőben; JSON biztonsági másolat ajánlott.":"A böngésző nem tud menteni! Töltsd le most a JSON-fájlt.",localOk);};
+        }catch(e){setSaveState(localOk?"Mentve a böngészőben; JSON biztonsági másolat ajánlott.":"A böngésző nem tud menteni! Töltsd le most a JSON-fájlt.",localOk);}
+      }else{
+        pendingSave=false;durableSave=localOk;
+        setSaveState(localOk?"Mentve a böngészőben; JSON biztonsági másolat ajánlott.":"A böngésző nem tud menteni! Töltsd le most a JSON-fájlt.",localOk);
+      }
+    },550);
+  }
+  window.addEventListener("beforeunload",function(e){
+    if(userChanged&&!durableSave){e.preventDefault();e.returnValue="";}
+  });
+  function openSafeStore(){
+    if(!window.indexedDB)return;
     try{
-      localStorage.setItem(KEY,JSON.stringify(S));
-      $("save-status").textContent="Automatikus mentés: sikeres (csak ezen az eszközön). Készíts JSON biztonsági másolatot is!";
-      $("save-status").style.color="#b9f3c9";
-    }catch(e){
-      $("save-status").textContent="Figyelem: a böngésző nem tud menteni! Mentsd le a munkádat JSON-fájlként.";
-      $("save-status").style.color="#ffb4ae";
-    }
+      var req=window.indexedDB.open(IDB_NAME,1);
+      req.onupgradeneeded=function(){req.result.createObjectStore("profiles");};
+      req.onsuccess=function(){
+        db=req.result; dbAvailable=true;
+        var tx=db.transaction("profiles","readonly"),get=tx.objectStore("profiles").get(IDB_KEY);
+        get.onsuccess=function(){
+          try{
+            var record=get.result;
+            var localSaved=0;
+            try{localSaved=Number(localStorage.getItem(LAST_SAVED_KEY))||0;}catch(e){}
+            if(record&&record.value&&!userChanged&&(!localLoadValid||record.savedAt>localSaved)){
+              S=normalize(JSON.parse(record.value));renderEditor();refresh(false);
+              setSaveState("Korábbi munka visszaállítva a böngészőből. Készíts JSON-másolatot is!",true);
+            }else if(!record||localSaved>Number(record.savedAt||0)){save();}
+            else{setSaveState("Korábbi munka betöltve. Óra végén készíts JSON-másolatot!",true);}
+          }catch(e){setSaveState("A tárolt munka sérült. Ellenőrizd a JSON biztonsági másolatot!",false);}
+        };
+      };
+      req.onerror=function(){dbAvailable=false;setSaveState(localLoadValid?"Korábbi munka betöltve; JSON biztonsági másolat ajánlott.":"A biztonsági tár nem érhető el. Készíts JSON-másolatot!",localLoadValid);};
+    }catch(e){dbAvailable=false;}
   }
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
   function $(id){return document.getElementById(id);}
@@ -444,20 +512,22 @@ textarea{min-height:76px;resize:vertical}
 
   /* ---- Szerkesztő ---- */
   function fieldHtml(L,i,f,val){
-    var d=' data-l="'+L+'" data-i="'+i+'" data-k="'+f[0]+'"';
+    var id="fld-"+L+"-"+i+"-"+f[0];
+    var d=' id="'+id+'" data-l="'+L+'" data-i="'+i+'" data-k="'+f[0]+'"';
     var inner;
-    if(f[2]==="area")inner='<textarea'+d+'>'+esc(val)+'</textarea>';
+    if(f[2]==="area")inner='<textarea'+d+' maxlength="6000">'+esc(val)+'</textarea>';
     else if(f[2]==="select")inner='<select'+d+'>'+opts(f[0]==="type"?TYPES:RELS,val,f[0]==="type")+'</select>';
     else{
       var bad=(L==="recs"&&f[0]==="source"&&S.recs[i].text.trim()&&!String(val).trim());
-      inner='<input type="text"'+d+(bad?' class="invalid"':'')+' value="'+esc(val)+'" autocomplete="off">';
+      inner='<input type="text" maxlength="6000"'+d+(bad?' class="invalid"':'')+' value="'+esc(val)+'" autocomplete="off">';
     }
-    return '<div><label>'+esc(f[1])+'</label>'+inner+'</div>';
+    return '<div><label for="'+id+'">'+esc(f[1])+'</label>'+inner+'</div>';
   }
   function imgCtl(L,i,img){
-    return '<label>Kép (nem kötelező)</label><div class="imgrow">'+(img?'<span class="thumb" style="background-image:url(\''+img+'\')"></span>':'')+
-      '<input type="file" accept="image/*" data-imgl="'+L+'" data-i="'+i+'" aria-label="Kép feltöltése">'+
-      (img?'<button class="btn small danger" type="button" data-clearl="'+L+'" data-i="'+i+'">Eltávolítás</button>':'')+'</div>';
+    return '<label for="image-'+L+'-'+i+'">Kép (nem kötelező)</label><div class="imgrow">'+(img?'<span class="thumb" style="background-image:url(\''+img+'\')"></span>':'')+
+      '<input id="image-'+L+'-'+i+'" type="file" accept="image/*" data-imgl="'+L+'" data-i="'+i+'">'+
+      (img?'<button class="btn small danger" type="button" data-clearl="'+L+'" data-i="'+i+'">Eltávolítás</button>':'')+'</div>'+
+      '<label for="src-'+L+'-'+i+'">Kép forrása (szerző, lelőhely, licenc)</label><input id="src-'+L+'-'+i+'" type="text" maxlength="1000" value="'+esc(S[L][i].imgSource||'')+'" data-l="'+L+'" data-i="'+i+'" data-k="imgSource">';
   }
   function listHtml(L){
     var cfg=LISTS[L];
@@ -518,7 +588,14 @@ textarea{min-height:76px;resize:vertical}
     var conns=S.conns.filter(function(x){return x.name.trim();}).length;
     var n=sentences(S.summary);
     var hasImg=!!(S.photo||S.banner||S.featured.img||["orgs","experience","projects","education"].some(function(k){return S[k].some(function(x){return x.img;});}));
+    var pictures=[];
+    if(S.photo)pictures.push(!!S.photoSrc.trim());
+    if(S.banner)pictures.push(!!S.bannerSrc.trim());
+    if(S.featured.img)pictures.push(!!S.featured.imgSource.trim());
+    ["orgs","experience","projects","education"].forEach(function(k){S[k].forEach(function(x){if(x.img)pictures.push(!!(x.imgSource||"").trim());});});
+    var picsCited=!pictures.length||pictures.every(Boolean)||!!S.imgSrc.trim();
     var list=[
+      ["Tanuló neve és osztálya kitöltve",!!S.student.trim()&&!!S.studentClass.trim()],
       ["Név és fejléc kitöltve",S.name.trim().length>1&&S.headline.trim().length>=10],
       ["Összefoglaló 3–4 mondat",n>=3&&n<=4],
       ["Legalább 3 kitöltött tapasztalat",exp>=3],
@@ -527,7 +604,7 @@ textarea{min-height:76px;resize:vertical}
       ["Legalább 2 ajánlás, mindegyikhez forrással",recs.length>=2&&recs.every(function(x){return x.source.trim();})],
       ["Pozitív és kritikus vélemény is szerepel",recs.some(function(x){return x.type==="pos";})&&recs.some(function(x){return x.type==="neg";})],
       ["Legalább 3 kapcsolat",conns>=3],
-      ["Képforrás és idézetforrás megadva (ha van kép vagy jelmondat)",(!hasImg||S.imgSrc.trim())&&(!S.motto.trim()||S.mottoSrc.trim())]
+      ["Kép- és idézetforrások megadva (ha szükséges)",picsCited&&(!S.motto.trim()||S.mottoSrc.trim())]
     ];
     var done=list.filter(function(x){return x[1];}).length;
     $("checks").innerHTML=list.map(function(x){
@@ -554,7 +631,8 @@ textarea{min-height:76px;resize:vertical}
     var avStyle=S.photo?' style="background-image:url(\''+S.photo+'\')"':'';
     var nconn=S.conns.filter(function(x){return x.name.trim();}).length;
 
-    var h='<div class="nav" aria-hidden="true"><div class="brand">Pr</div><div class="search">Keresés</div>'+
+    var h='<div class="print-ident">Tanuló: '+esc(S.student||"Nincs megadva")+' · Osztály: '+esc(S.studentClass||"Nincs megadva")+'</div>';
+    h+='<div class="nav" aria-hidden="true"><div class="brand">Pr</div><div class="search">Keresés</div>'+
       '<div class="navitems"><span>Kezdőlap</span><span>Hálózat</span><span>Üzenetek</span><span>Értesítések</span></div></div>';
     h+='<div class="cover"'+coverStyle+'>'+mot+'</div><div class="layout">';
 
@@ -594,7 +672,7 @@ textarea{min-height:76px;resize:vertical}
     /* Oldalsó oszlop */
     h+='<div class="col">';
     if(S.featured.title.trim()||S.featured.text.trim()||S.featured.img)
-      h+='<div class="pcard keep"><h3>Kiemelt tartalom</h3>'+(S.featured.img?'<img class="feat" alt="" src="'+S.featured.img+'">':'')+'<b>'+esc(S.featured.title)+'</b><p style="font-size:.9rem;margin-top:3px">'+esc(S.featured.text)+'</p></div>';
+      h+='<div class="pcard keep"><h3>Kiemelt tartalom</h3>'+(S.featured.img?'<img class="feat" alt="'+esc(S.featured.title||"Kiemelt tartalom képe")+'" src="'+S.featured.img+'">':'')+'<b>'+esc(S.featured.title)+'</b><p style="font-size:.9rem;margin-top:3px">'+esc(S.featured.text)+'</p></div>';
 
     h+='<div class="pcard keep bars"><h3>Készségek</h3>'+(S.skills.length?S.skills.map(function(s){
       return '<div class="sk"><span>'+esc(s.name)+'</span><span class="track" role="img" aria-label="'+s.level+' / 5"><i style="width:'+(s.level*20)+'%"></i></span></div>';
@@ -616,11 +694,16 @@ textarea{min-height:76px;resize:vertical}
     }).join(""):'<p class="empty">Még nincs kapcsolat.</p>')+'</div>';
     h+='</div></div>';
 
-    h+='<div class="note">'+(S.student.trim()?'Készítette: '+esc(S.student)+(S.studentClass.trim()?' ('+esc(S.studentClass)+')':'')+'. ':'')+'Oktatási célú, fiktív profilsablon. Nem valós közösségi oldal profilja.'+(S.imgSrc.trim()?' Képforrás: '+esc(S.imgSrc)+'.':'')+'</div>';
+    var individualSources=[];
+    if(S.photo&&S.photoSrc.trim())individualSources.push('Portré: '+S.photoSrc.trim());
+    if(S.banner&&S.bannerSrc.trim())individualSources.push('Borító: '+S.bannerSrc.trim());
+    if(S.featured.img&&S.featured.imgSource.trim())individualSources.push('Kiemelt: '+S.featured.imgSource.trim());
+    ['orgs','experience','projects','education'].forEach(function(k){S[k].forEach(function(x,i){if(x.img&&x.imgSource.trim())individualSources.push(LISTS[k].label+' '+(i+1)+': '+x.imgSource.trim());});});
+    h+='<div class="note">'+(S.student.trim()?'Készítette: '+esc(S.student)+(S.studentClass.trim()?' ('+esc(S.studentClass)+')':'')+'. ':'')+'Oktatási célú, fiktív profilsablon. Nem valós közösségi oldal profilja.'+(individualSources.length?' Képforrások: '+individualSources.map(esc).join(' | ')+'.':'')+(S.imgSrc.trim()?' Összesített képforrásjegyzék: '+esc(S.imgSrc)+'.':'')+'</div>';
     $("profile").innerHTML=h;
   }
 
-  function refresh(){renderChecks();renderPreview();save();}
+  function refresh(persist){renderChecks();renderPreview();if(persist!==false){userChanged=true;save();}}
 
   /* ---- Képek ---- */
   function cropCover(img,W,H,contain){
@@ -633,6 +716,7 @@ textarea{min-height:76px;resize:vertical}
     return c.toDataURL("image/jpeg",0.8);
   }
   function handleFile(input,key,W,H){
+    var owner=S;
     var f=input.files&&input.files[0];
     if(!f)return;
     if(!/^image\//.test(f.type)){showImgMsg("Csak képfájl tölthető fel.");return;}
@@ -641,7 +725,7 @@ textarea{min-height:76px;resize:vertical}
     var r=new FileReader();
     r.onload=function(){
       var img=new Image();
-      img.onload=function(){S[key]=cropCover(img,W,H);refresh();};
+      img.onload=function(){if(S!==owner)return;S[key]=cropCover(img,W,H);refresh();};
       img.onerror=function(){showImgMsg("A képet nem sikerült beolvasni.");};
       img.src=r.result;
     };
@@ -666,11 +750,12 @@ textarea{min-height:76px;resize:vertical}
   document.addEventListener("change",function(e){
     var t=e.target;
     if(t.type!=="file"||!t.hasAttribute("data-imgl"))return;
-    var L=t.getAttribute("data-imgl"),i=+t.getAttribute("data-i");
-    readImage(t.files&&t.files[0],240,240,true,function(url){S[L][i].img=url;renderEditor();refresh();});
+    var L=t.getAttribute("data-imgl"),i=+t.getAttribute("data-i"),item=S[L][i];
+    readImage(t.files&&t.files[0],240,240,true,function(url){if(S[L].indexOf(item)===-1)return;item.img=url;renderEditor();refresh();});
   });
   $("f-fimg").addEventListener("change",function(){
-    readImage(this.files&&this.files[0],800,450,false,function(url){S.featured.img=url;updateFeatThumb();refresh();});
+    var item=S.featured;
+    readImage(this.files&&this.files[0],800,450,false,function(url){if(S.featured!==item)return;item.img=url;updateFeatThumb();refresh();});
   });
   document.addEventListener("click",function(e){
     var t=e.target.closest("button");if(!t)return;
@@ -703,7 +788,7 @@ textarea{min-height:76px;resize:vertical}
   });
   document.addEventListener("click",function(e){
     var t=e.target.closest("button");if(!t)return;
-    if(t.hasAttribute("data-add")){var L=t.getAttribute("data-add");S[L].push(LISTS[L].blank());renderEditor();refresh();}
+    if(t.hasAttribute("data-add")){var L=t.getAttribute("data-add");if(S[L].length>=50){actMsg("Egy szakaszban legfeljebb 50 tétel lehet.");return;}S[L].push(LISTS[L].blank());renderEditor();refresh();}
     else if(t.hasAttribute("data-del")){S[t.getAttribute("data-del")].splice(+t.getAttribute("data-i"),1);renderEditor();refresh();}
     else if(t.hasAttribute("data-addtag")){addTag(t.getAttribute("data-addtag"));}
     else if(t.hasAttribute("data-deltag")){var k=t.getAttribute("data-deltag");S[k].splice(+t.getAttribute("data-i"),1);renderTags(k);refresh();}
@@ -719,6 +804,7 @@ textarea{min-height:76px;resize:vertical}
   function addTag(k){
     var el=$("t-"+k),v=el.value.trim();
     if(!v)return;
+    if(S[k].length>=50||v.length>6000){actMsg("Legfeljebb 50, egyenként 6000 karakteres tétel adható meg.");return;}
     if(S[k].indexOf(v)===-1)S[k].push(v);
     el.value="";renderTags(k);refresh();el.focus();
   }
@@ -728,6 +814,7 @@ textarea{min-height:76px;resize:vertical}
   function addSkill(){
     var el=$("f-skill"),v=el.value.trim();
     if(!v)return;
+    if(S.skills.length>=50||v.length>6000){actMsg("Legfeljebb 50, egyenként 6000 karakteres készség adható meg.");return;}
     S.skills.push({name:v,level:+$("f-skilllvl").value});
     el.value="";renderSkills();refresh();el.focus();
   }
@@ -736,10 +823,15 @@ textarea{min-height:76px;resize:vertical}
 
   function setView(v){
     document.body.setAttribute("data-view",v);
-    ["edit","preview"].forEach(function(n){$("tab-"+n).setAttribute("aria-selected",String(n===v));});
+    ["edit","preview"].forEach(function(n){$("tab-"+n).setAttribute("aria-selected",String(n===v));$("tab-"+n).tabIndex=n===v?0:-1;});
     window.scrollTo(0,0);
   }
 
+  document.querySelector(".tabs").addEventListener("keydown",function(e){
+    if(!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;
+    e.preventDefault();var v=e.key==="Home"?"edit":e.key==="End"?"preview":document.body.getAttribute("data-view")==="edit"?"preview":"edit";
+    setView(v);$("tab-"+v).focus();
+  });
   var resetArmed=false,resetTimer=null;
   $("btn-reset").addEventListener("click",function(){
     var b=this;
@@ -758,7 +850,8 @@ textarea{min-height:76px;resize:vertical}
   }
   $("btn-export").addEventListener("click",function(){
     try{
-      var blob=new Blob([JSON.stringify({format:"tortenelmi-profil",version:3,profile:S},null,2)],{type:"application/json;charset=utf-8"});
+      var blob=new Blob([JSON.stringify({format:"tortenelmi-profil",version:4,profile:S},null,2)],{type:"application/json;charset=utf-8"});
+      if(blob.size>MAX_JSON){actMsg("A munka fájlmérete meghaladja az 50 MB-ot. Csökkentsd a képek számát, majd ments ismét.");return;}
       var url=URL.createObjectURL(blob),a=document.createElement("a");
       a.href=url;a.download=fileName();document.body.appendChild(a);a.click();a.remove();
       setTimeout(function(){URL.revokeObjectURL(url);},1000);
@@ -768,14 +861,26 @@ textarea{min-height:76px;resize:vertical}
   $("btn-import").addEventListener("click",function(){$("file-import").click();});
   $("file-import").addEventListener("change",function(){
     var file=this.files&&this.files[0];this.value="";if(!file)return;
-    if(file.size>12*1024*1024){actMsg("A betöltendő fájl túl nagy (maximum 12 MB).");return;}
+    if(file.size>MAX_JSON){actMsg("A betöltendő fájl túl nagy (maximum 50 MB).");return;}
     var r=new FileReader();
     r.onload=function(){
       try{
         var obj=JSON.parse(r.result);
         if(!obj||obj.format!=="tortenelmi-profil"||!obj.profile||typeof obj.profile!=="object"||Array.isArray(obj.profile))throw new Error("Nem megfelelő profilfájl.");
+        if(obj.version!==undefined&&(!Number.isInteger(obj.version)||obj.version<1||obj.version>4))throw new Error("Nem támogatott fájlverzió.");
+        if(typeof obj.profile.name!=="string")throw new Error("Hiányzó vagy hibás profilnév mező.");
+        var next=normalize(obj.profile);
+        function check(raw,clean,path){
+          if(Array.isArray(raw)){
+            if(!Array.isArray(clean)||raw.length!==clean.length)throw new Error("Túl sok vagy hibás tétel: "+path);
+            raw.forEach(function(v,i){if(path==="orgs"&&typeof v==="string")v={name:v};check(v,clean[i],path+"."+i);});
+          }else if(raw&&typeof raw==="object"){
+            Object.keys(raw).forEach(function(k){if(!Object.prototype.hasOwnProperty.call(clean||{},k))throw new Error("Ismeretlen mező: "+path+"."+k);check(raw[k],clean[k],path?path+"."+k:k);});
+          }else if(raw!==clean)throw new Error("Hibás, túl hosszú vagy nem támogatott adat: "+path);
+        }
+        check(obj.profile,next,"");
         if(!window.confirm("Betöltöd a mentett munkát? A jelenlegi kitöltés helyére kerül. Előbb mentsd le, ha szükséged van rá!"))return;
-        S=normalize(obj.profile);renderEditor();refresh();
+        S=next;renderEditor();refresh();
         actMsg("A mentett munka sikeresen megnyílt.");
       }catch(e){actMsg("Nem sikerült betölteni a munkát: "+e.message);}
     };
@@ -784,11 +889,11 @@ textarea{min-height:76px;resize:vertical}
   });
   $("btn-dl").addEventListener("click",function(){
     actMsg("");
-    try{window.print();actMsg("A felugró ablakban válassza a „Mentés PDF-ként” lehetőséget (cél: PDF), majd mentse el a fájlt.");}
+    try{window.print();actMsg("A nyomtatási ablakban válaszd a „Mentés PDF-ként” célt; színes megjelenítéshez kapcsold be a háttérgrafikák nyomtatását.");}
     catch(e){actMsg("A nyomtatás nem indult el. Használja a Ctrl+P billentyűkombinációt.");}
   });
 
-  renderEditor();refresh();
+  renderEditor();refresh(false);openSafeStore();
 })();
 </script>
 </body>
